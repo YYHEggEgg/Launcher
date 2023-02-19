@@ -115,6 +115,7 @@ namespace Launcher.Common
 
 
                 proxyServer.BeforeRequest += OnRequest;
+                proxyServer.AfterResponse += AfterResponse;
                 proxyServer.ServerCertificateValidationCallback += OnCertificateValidation;
                 if (String.IsNullOrEmpty(port))
                 {
@@ -139,8 +140,6 @@ namespace Launcher.Common
 
 
             }
-
-
 
             public void Stop()
             {
@@ -216,6 +215,7 @@ namespace Launcher.Common
 
                     }
 
+                    e.HttpClient.Request.Url
                 }
             }
 
@@ -226,6 +226,18 @@ namespace Launcher.Common
                 return Task.CompletedTask;
             }
 
+            private async Task AfterResponse(object sender, SessionEventArgs e)
+            {
+                string hostname = e.WebSession.Request.RequestUri.Host;
+                if (hostname.EndsWith(".yuanshen.com") |
+                   hostname.EndsWith(".hoyoverse.com") |
+                   hostname.EndsWith(".mihoyo.com") |
+                   hostname.EndsWith(".mob.com") |
+                   hostname.EndsWith(".yuanshen.com:8888"))
+                {
+                    throw new NotImplementedException();
+                }
+            }
         }
     }
 }
