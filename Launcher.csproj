@@ -291,6 +291,8 @@
     <Compile Include="Model\PkgVersionItem.cs" />
     <Compile Include="Model\ProxyConfig.cs" />
     <Compile Include="Model\ServerItem.cs" />
+    <Compile Include="User\UserCollection.cs" />
+    <Compile Include="User\UserProfile.cs" />
     <Compile Include="ViewModel\HomeVM.cs" />
     <Compile Include="ViewModel\SettingVM.cs" />
     <Compile Include="View\About.xaml.cs">

@@ -1,31 +1,39 @@
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+
 namespace Launcher.User
 {
     internal static class UserProfile
     {
-        public Dictionary<string, User> profilemap;
+        public static UserCollection collection;
+        public static Guid NOT_FOUND_GUID => Guid.Empty;
 
         static UserProfile()
         {
-            List<KeyValuePair<string, User>> list_profilemap = 
-                JsonSerializer.Deserialize<List<KeyValuePair<string, User>>>(
-                File.ReadAllText("user_profile.json"));
-            profilemap = new(list_profilemap);
+            collection = File.Exists("user_profile.json")
+                ? UserCollection.GetFromFile("user_profile.json")
+                : new UserCollection("user_profile.json");
         }
 
-        public static void QueryDeviceGuid(string username)
+        /// <summary>
+        /// Query the device-Guid for a user. If not exists, it will be automatically created.
+        /// </summary>
+        public static Guid QueryDeviceGuid(string username)
         {
-            throw new NotImplementedException();
+            return collection.SearchUserByName(username).Device_Guid;
         }
 
-        public static void SaveUserProfile()
+        /// <summary>
+        /// Query the device-Guid for a user. If not exists, method will return NOT_FOUND_GUID.
+        /// </summary>
+        public static Guid QueryDeviceGuidByToken(string token)
         {
-            throw new NotImplementedException();
+            var user = collection.SearchUserByToken(token);
+            return user != null ? user.Device_Guid : NOT_FOUND_GUID;
         }
-    }
-
-    internal struct User
-    {
-        public string Name { get; set; }
-        public Guid Device-Guid { get; set; }
     }
 }
