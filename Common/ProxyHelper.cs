@@ -185,7 +185,9 @@ namespace Launcher.Common
                 string hostname = e.WebSession.Request.RequestUri.Host;
                 if (hostname.EndsWith(".yuanshen.com") |
                    hostname.EndsWith(".hoyoverse.com") |
-                   hostname.EndsWith(".mihoyo.com") | hostname.EndsWith(fakeHost))
+                   hostname.EndsWith(".mihoyo.com") |
+                   hostname.EndsWith(".mob.com") |
+                   hostname.EndsWith(".yuanshen.com:8888") | hostname.EndsWith(fakeHost))
                 {
                     e.DecryptSsl = true;
                 }
@@ -202,7 +204,9 @@ namespace Launcher.Common
                 string hostname = e.WebSession.Request.RequestUri.Host;
                 if (hostname.EndsWith(".yuanshen.com") |
                    hostname.EndsWith(".hoyoverse.com") |
-                   hostname.EndsWith(".mihoyo.com"))
+                   hostname.EndsWith(".mihoyo.com") |
+                   hostname.EndsWith(".mob.com") | 
+                   hostname.EndsWith(".yuanshen.com:8888"))
                 {
                     string oHost = e.WebSession.Request.RequestUri.Host;
                     e.HttpClient.Request.Url = e.HttpClient.Request.Url.Replace(oHost, fakeHost);
