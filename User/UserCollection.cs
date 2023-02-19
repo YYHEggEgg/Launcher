@@ -45,9 +45,9 @@ namespace Launcher.User
         }
 
         /// <summary>
-        /// Search User By Username. If not exists, a new instance will be automatically created.
+        /// Search User By <paramref name="username"/>. If not exists, a new instance will be automatically created.
         /// </summary>
-        /// <returns>The User instance.</returns>
+        /// <returns>The <see cref="User"/> instance.</returns>
         public User SearchUserByName(string username)
         {
             if (username == null)
@@ -72,16 +72,16 @@ namespace Launcher.User
         }
 
         /// <summary>
-        /// Search User By Device Token.
+        /// Search User By <paramref name="deviceToken"/>.
         /// </summary>
-        /// <returns>The User instance, or null if not exists.</returns>
-        public User SearchUserByToken(string token)
+        /// <returns>The <see cref="User"/> instance, or <see cref="null"/> if not exists.</returns>
+        public User SearchUserByToken(string deviceToken)
         {
-            if (token == null)
-                throw new ArgumentNullException("token");
+            if (deviceToken == null)
+                throw new ArgumentNullException("deviceToken");
             lock (tokenmap)
             {
-                return tokenmap.ContainsKey(token) ? tokenmap[token] : null;
+                return tokenmap.ContainsKey(deviceToken) ? tokenmap[deviceToken] : null;
             }
         }
 
@@ -113,10 +113,8 @@ namespace Launcher.User
 
         #region Serialization
         /// <summary>
-        /// Get a UserCollection instance with autosave to <paramref name="filePath"/>.
+        /// Get a <see cref="UserCollection"/> instance with autosave to <paramref name="filePath"/>.
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
         public static UserCollection GetFromFile(string filePath)
         {
             var list_profile = JsonConvert.DeserializeObject<List<User>>(File.ReadAllText(filePath));
