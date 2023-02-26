@@ -1,9 +1,11 @@
 ﻿using Launcher.Model;
+using Launcher.User;
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Titanium.Web.Proxy;
 using Titanium.Web.Proxy.EventArguments;
@@ -77,6 +79,10 @@ namespace Launcher.Common
             ExplicitProxyEndPoint explicitEndPoint;
             private string port;
             private string fakeHost;
+            /// <summary>
+            /// When receiving response, the hostname will not be fakeHost but without port. e.g. not 127.0.0.1:443 but 127.0.0.1 .
+            /// </summary>
+            private string fakeHostWithoutPort;
             private bool usehttp;
 
             private ProxyConfig OldProxy;
@@ -85,6 +91,7 @@ namespace Launcher.Common
             {
                 this.port = port;
                 this.fakeHost = host;
+                this.fakeHostWithoutPort = fakeHost.Substring(0, fakeHost.IndexOf(':'));
                 this.usehttp = usehttp;
             }
 
@@ -115,7 +122,7 @@ namespace Launcher.Common
 
 
                 proxyServer.BeforeRequest += OnRequest;
-                proxyServer.AfterResponse += AfterResponse;
+                proxyServer.BeforeResponse += OnResponse;
                 proxyServer.ServerCertificateValidationCallback += OnCertificateValidation;
                 if (String.IsNullOrEmpty(port))
                 {
@@ -138,7 +145,7 @@ namespace Launcher.Common
                 //proxyServer.SetAsSystemHttpsProxy(explicitEndPoint);
                 Set_Proxy(new ProxyConfig(proxyServer: $"127.0.0.1:{port}", usehttp: usehttp,enable:true));
 
-
+                UserProfile.Ping();
             }
 
             public void Stop()
@@ -148,7 +155,7 @@ namespace Launcher.Common
                     explicitEndPoint.BeforeTunnelConnectRequest -= OnBeforeTunnelConnectRequest;
                     proxyServer.BeforeRequest -= OnRequest;
                     proxyServer.ServerCertificateValidationCallback -= OnCertificateValidation;
-
+                    proxyServer.BeforeResponse -= OnResponse;
 
                 }
                 catch { }
@@ -186,7 +193,8 @@ namespace Launcher.Common
                    hostname.EndsWith(".hoyoverse.com") |
                    hostname.EndsWith(".mihoyo.com") |
                    hostname.EndsWith(".mob.com") |
-                   hostname.EndsWith(".yuanshen.com:8888") | hostname.EndsWith(fakeHost))
+                   hostname.EndsWith(".yuanshen.com:8888") |
+                   hostname.EndsWith(".mi.homo") | hostname.EndsWith(fakeHost))
                 {
                     e.DecryptSsl = true;
                 }
@@ -205,8 +213,13 @@ namespace Launcher.Common
                    hostname.EndsWith(".hoyoverse.com") |
                    hostname.EndsWith(".mihoyo.com") |
                    hostname.EndsWith(".mob.com") | 
-                   hostname.EndsWith(".yuanshen.com:8888"))
+                   hostname.EndsWith(".yuanshen.com:8888") | 
+                   hostname.EndsWith(".mi.homo") |
+                   hostname.EndsWith(fakeHost))
                 {
+                    e.HttpClient.Request.Headers.AddHeader(new HttpHeader("Original-Path",
+                        $"{e.HttpClient.Request.Method} {e.HttpClient.Request.Url}"));
+
                     string oHost = e.WebSession.Request.RequestUri.Host;
                     e.HttpClient.Request.Url = e.HttpClient.Request.Url.Replace(oHost, fakeHost);
                     if (usehttp)
@@ -215,7 +228,17 @@ namespace Launcher.Common
 
                     }
 
-                    e.HttpClient.Request.Url
+                    var notifytype = UserProfile.IsUrlNeedNotify(e.HttpClient.Request.RequestUri.LocalPath, true);
+                    if (notifytype != UserProfile.UrlEndpointType.Other)
+                    {
+                        UserProfile.UrlNotify(notifytype, await e.GetRequestBodyAsString());
+                    }
+
+                    if (UserProfile.Device_Guid_Header != null)
+                    {
+                        e.HttpClient.Request.Headers.AddHeader(new HttpHeader("Device-GUID",
+                            UserProfile.Device_Guid_Header));
+                    }
                 }
             }
 
@@ -226,16 +249,16 @@ namespace Launcher.Common
                 return Task.CompletedTask;
             }
 
-            private async Task AfterResponse(object sender, SessionEventArgs e)
+            private async Task OnResponse(object sender, SessionEventArgs e)
             {
                 string hostname = e.WebSession.Request.RequestUri.Host;
-                if (hostname.EndsWith(".yuanshen.com") |
-                   hostname.EndsWith(".hoyoverse.com") |
-                   hostname.EndsWith(".mihoyo.com") |
-                   hostname.EndsWith(".mob.com") |
-                   hostname.EndsWith(".yuanshen.com:8888"))
+                if (hostname.EndsWith(fakeHostWithoutPort))
                 {
-                    throw new NotImplementedException();
+                    var notifytype = UserProfile.IsUrlNeedNotify(e.HttpClient.Request.RequestUri.LocalPath, false);
+                    if (notifytype != UserProfile.UrlEndpointType.Other)
+                    {
+                        UserProfile.UrlNotify(notifytype, await e.GetResponseBodyAsString());
+                    }
                 }
             }
         }

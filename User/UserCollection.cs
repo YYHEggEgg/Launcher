@@ -16,7 +16,7 @@ namespace Launcher.User
         private List<User> users;
 
         public DateTime Last_save_time { get; private set; }
-        private object fileLock = null;
+        private object fileLock = 1919810;
 
         private string autosavePath;
 
@@ -29,7 +29,7 @@ namespace Launcher.User
             this.autosavePath = autosavePath;
         }
 
-        public UserCollection(List<User> input_users, string autosavePath = null)
+        public UserCollection(List<User> input_users, string autosavePath = null) : this(autosavePath)
         {
             users = input_users;
             foreach (var user in users)
@@ -40,8 +40,6 @@ namespace Launcher.User
                     tokenmap.Add(user.Token, user);
                 }
             }
-
-            this.autosavePath = autosavePath;
         }
 
         /// <summary>
