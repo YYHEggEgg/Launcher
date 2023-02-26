@@ -15,7 +15,7 @@ namespace Launcher.User
         public static Guid NOT_FOUND_GUID => Guid.Empty;
 
         /// <summary>
-        /// Device-GUID Header for being added to the request. If not set, default value is <see cref="null"/>.
+        /// Device-GUID Header for being added to the request. Should be get from <see cref="Guid.ToString"/>. If not set, default value is <see cref="null"/>.
         /// </summary>
         public static string Device_Guid_Header { get; private set; }
 
@@ -62,10 +62,6 @@ namespace Launcher.User
             {
                 return isRequest ? UrlEndpointType.TokenVerifyRequest : UrlEndpointType.TokenVerifyResponse;
             }
-            else if (endpoint.StartsWith("/query_cur_region") && isRequest)
-            {
-                return UrlEndpointType.QueryCurrRegionHttpRequest;
-            }
             else
             {
                 return UrlEndpointType.Other;
@@ -95,11 +91,31 @@ namespace Launcher.User
                     }
                     break;
                 case UrlEndpointType.LoginResponse:
+                case UrlEndpointType.TokenVerifyResponse:
+                    try
+                    {
+                        JObject jo = JObject.Parse(body);
+                        if (jo["data"] != null)
+                        {
+                            string token = (string)jo["data"]["account"]["token"];
+                            string username = (string)jo["data"]["account"]["name"];
+                            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(token))
+                                collection.SetUserToken(username, token);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Fail($"UrlNotify({endpointType}) fail: {ex}");
+                    }
+                    break;
+                case UrlEndpointType.TokenVerifyRequest:
                     try
                     {
                         JObject jo = JObject.Parse(body);
                         string token = (string)jo["token"];
-                        collection.SetUserToken()
+                        User searchuser = collection.SearchUserByToken(token);
+                        if (searchuser != null) Device_Guid_Header = searchuser.Device_Guid.ToString();
+                        else Device_Guid_Header = NOT_FOUND_GUID.ToString();
                     }
                     catch (Exception ex)
                     {
@@ -120,6 +136,8 @@ namespace Launcher.User
             UrlNotify(IsUrlNeedNotify(endpoint, isRequest), body);
         }
 
+        public static string Ping() => "Pong";
+
         /// <summary>
         /// Endpoint type split for <see cref="UrlNotify(UrlEndpointType, string)"/>.
         /// </summary>
@@ -137,10 +155,6 @@ namespace Launcher.User
             /// Request like <c>/hk4e_*/mdk/shield/api/verify</c>
             /// </summary>
             TokenVerifyRequest = 2,
-            /// <summary>
-            /// <c>/query_cur_region?...</c>
-            /// </summary>
-            QueryCurrRegionHttpRequest = 3,
 
             /// <summary>
             /// Response like <c>/hk4e_*/mdk/shield/api/login</c>
