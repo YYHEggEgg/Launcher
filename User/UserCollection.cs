@@ -101,7 +101,7 @@ namespace Launcher.User
             Save();
         }
 
-        public void Save()
+        public async void Save()
         {
             lock (users)
                 lock (fileLock)
